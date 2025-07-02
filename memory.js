@@ -68,11 +68,33 @@ function getCurrentPlan() {
   return 'План отсутствует';
 }
 
+/**
+ * Сохраняет содержимое в файл выбранной памяти
+ * Аргументы:
+ *     filename (string): имя файла
+ *     content (string): содержимое для записи
+ * Возвращает:
+ *     string — полный путь сохранённого файла
+ */
+function writeMemoryFile(filename, content) {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const dirPath = path.join(memory_state.memory_path, 'memory');
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+  }
+  const filePath = path.join(dirPath, filename);
+  fs.writeFileSync(filePath, content, 'utf8');
+  return filePath;
+}
+
 module.exports = {
   memory_state,
   setLocalMemoryBasePath,
   setMemoryFolder,
-  getCurrentPlan
+  getCurrentPlan,
+  writeMemoryFile
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
