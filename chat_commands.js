@@ -4,6 +4,7 @@ const memory = require('./memory');
 const memory_mode = require('./memory_mode');
 const path = require('path');
 const fs = require('fs');
+const helpers = require('./helpers');
 
 /**
  * Разбирает строку с аргументами формата key="value"
@@ -64,6 +65,52 @@ function handle_save_local_file(message, userId = 'user') {
     }
   } catch (err) {
     console.log('❌ Ошибка: не удалось сохранить файл');
+  }
+  return true;
+}
+
+/**
+ * Обрабатывает команду ручного сохранения памяти
+ * Аргументы:
+ *     message (string): текст команды
+ *     userId (string): идентификатор пользователя
+ * Возвращает:
+ *     boolean — была ли обработана команда
+ */
+function handle_save_memory(message, userId = 'user') {
+  if (!message.startsWith('/save_memory')) {
+    return false;
+  }
+  const params = parse_arguments(message);
+  let filename = params.filename;
+  if (filename && !helpers.validate_filename(filename)) {
+    console.log('❌ Ошибка: имя файла должно оканчиваться на .md или .txt');
+    return true;
+  }
+  if (!filename) {
+    const date = new Date().toISOString().split('T')[0];
+    filename = `memory_${date}.md`;
+  }
+  const content = memory.getCurrentPlan();
+  try {
+    if (memory_mode.current_mode === 'github') {
+      memory_mode.saveMemoryWithIndex({
+        repo: memory_mode.repo_state.repo,
+        token: memory_mode.repo_state.token,
+        filename,
+        content,
+        userId,
+        type: memory_mode.repo_state.type
+      });
+      console.log(`✅ Файл "${filename}" успешно сохранён в режиме GitHub.`);
+    } else if (memory_mode.current_mode === 'local' && memory.memory_state.memory_path) {
+      memory.writeMemoryFile(filename, content);
+      console.log(`✅ Память сохранена как "${filename}"`);
+    } else {
+      console.log('❌ Ошибка: не выбран режим памяти');
+    }
+  } catch (err) {
+    console.log('❌ Ошибка: не удалось сохранить память');
   }
   return true;
 }
@@ -170,6 +217,7 @@ function handle_switch_memory_mode(message) {
 
 module.exports = {
   handle_save_local_file,
+  handle_save_memory,
   handle_load_local_file,
   handle_list_local_files,
   handle_switch_memory_mode
