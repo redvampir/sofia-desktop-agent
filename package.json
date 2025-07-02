@@ -4,7 +4,9 @@
   "description": "Минимальное кроссплатформенное CLI-приложение на Node.js, выполняющее роль моста между AI-ассистентом София и локальной файловой системой пользователя. Позволяет обмениваться данными памяти между чатом и компьютером без необходимости установки самого плагина.",
   "main": "chat_commands.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "start": "node index.js",
+  "dev": "nodemon chat_commands.js",
+  "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
