@@ -108,13 +108,30 @@ async function readMemoryFile(filename) {
   }
 }
 
+/**
+ * Возвращает список файлов из папки памяти
+ * Возвращает:
+ *     Promise<string[]> — имена файлов памяти
+ */
+async function listMemoryFiles() {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const dirPath = path.join(memory_state.memory_path, 'memory');
+  const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
+  return files
+    .filter((f) => f.isFile() && (f.name.endsWith('.md') || f.name.endsWith('.json')))
+    .map((f) => f.name);
+}
+
 module.exports = {
   memory_state,
   setLocalMemoryBasePath,
   setMemoryFolder,
   getCurrentPlan,
   writeMemoryFile,
-  readMemoryFile
+  readMemoryFile,
+  listMemoryFiles
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
