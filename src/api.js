@@ -12,6 +12,12 @@ const PORT = 4465;
 
 app.use(cors());
 app.use(express.json());
+// Логирование всех запросов
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`,
+    Object.keys(req.body).length ? req.body : req.query);
+  next();
+});
 
 app.get('/', (req, res) => {
   res.send('Sofia API is running.');
@@ -127,12 +133,14 @@ app.post('/saveLessonPlan', (req, res) => {
 /**
  * Сохраняет файл и индекс в удалённую память
  */
-app.post('/saveMemoryWithIndex', (req, res) => {
+app.post('/saveMemoryWithIndex', async (req, res) => {
+  const { filename, content, type } = req.body;
   try {
-    memory_mode.saveMemoryWithIndex(req.body);
-    return res.send('ok');
+    await memory.saveMemoryWithIndex(filename, content, type);
+    return res.json({ success: true });
   } catch (err) {
-    return res.status(500).send('Unable to save');
+    console.error('saveMemoryWithIndex:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -178,7 +186,26 @@ app.post('/set_local_path', (req, res) => {
     config.setMemoryPath(resolved);
     return res.json({ status: 'success', path: resolved });
   } catch (err) {
-    return res.status(500).send('Unable to set path');
+    console.error('set_local_path:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * Переключает режим памяти
+ */
+app.post('/switch_memory_repo', (req, res) => {
+  const { type } = req.body;
+  if (!type) {
+    return res.status(400).send('Missing type');
+  }
+  try {
+    config.setMemoryMode(type);
+    memory_mode.current_mode = type;
+    return res.json({ success: true, mode: type });
+  } catch (err) {
+    console.error('switch_memory_repo:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -205,10 +232,11 @@ app.post('/loadMemoryToContext', async (req, res) => {
     return res.status(400).send('Missing filename');
   }
   try {
-    await memory.loadMemoryFile(filename);
-    return res.send('ok');
+    const content = await memory.readMemoryFile(filename);
+    return res.json({ content });
   } catch (err) {
-    return res.status(500).send('Unable to load memory');
+    console.error('loadMemoryToContext:', err.message);
+    return res.status(500).json({ error: err.message });
   }
 });
 
@@ -297,6 +325,20 @@ app.get('/plan', (req, res) => {
  */
 app.get('/token/status', (req, res) => {
   return res.json({ active: memory_mode.repo_state.active });
+});
+
+/**
+ * Возвращает список файлов по индексу
+ */
+app.get('/listFiles', async (req, res) => {
+  const dir = req.query.path || '';
+  try {
+    const files = await memory.listFiles(dir);
+    return res.json({ files });
+  } catch (err) {
+    console.error('listFiles:', err.message);
+    return res.status(500).json({ error: err.message });
+  }
 });
 
 /**
