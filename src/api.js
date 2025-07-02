@@ -3,6 +3,8 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const chat_commands = require('../chat_commands');
+const memory = require('../memory');
+const memory_mode = require('../memory_mode');
 
 // Конфигурация API
 const config = {
@@ -81,11 +83,245 @@ app.post('/write', (req, res) => {
 });
 
 /**
+ * Сохраняет произвольный файл через API
+ * Запрос: POST /save { name: "file.md", content: "..." }
+ */
+app.post('/save', (req, res) => {
+  const { name, content } = req.body;
+  if (!name || !content) {
+    return res.status(400).send('Missing name or content');
+  }
+  try {
+    chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    return res.send('saved');
+  } catch (err) {
+    return res.status(500).send('Unable to save');
+  }
+});
+
+/**
+ * Читает файл через API
+ * Запрос: POST /read { name: "file.md" }
+ */
+app.post('/read', async (req, res) => {
+  const { name } = req.body;
+  if (!name) {
+    return res.status(400).send('Missing name');
+  }
+  try {
+    const content = await memory.readMemoryFile(name);
+    return res.send(content);
+  } catch (err) {
+    return res.status(500).send('Unable to read');
+  }
+});
+
+/**
+ * Устанавливает репозиторий памяти
+ * Запрос: POST /setMemoryRepo { type: "github", repo: "repo", token: "token" }
+ */
+app.post('/setMemoryRepo', (req, res) => {
+  const { type, repo, token } = req.body;
+  if (!type || !repo || !token) {
+    return res.status(400).send('Missing parameters');
+  }
+  try {
+    memory_mode.switchMemoryRepo(type, repo, token);
+    return res.send('ok');
+  } catch (err) {
+    return res.status(500).send('Unable to set repo');
+  }
+});
+
+/**
+ * Сохраняет план урока
+ * Запрос: POST /saveLessonPlan { filename: "plan.md" }
+ */
+app.post('/saveLessonPlan', (req, res) => {
+  const { filename } = req.body;
+  const message = filename ? `/save_memory filename="${filename}"` : '/save_memory';
+  try {
+    chat_commands.handle_save_memory(message);
+    return res.send('ok');
+  } catch (err) {
+    return res.status(500).send('Unable to save plan');
+  }
+});
+
+/**
+ * Сохраняет файл и индекс в удалённую память
+ */
+app.post('/saveMemoryWithIndex', (req, res) => {
+  try {
+    memory_mode.saveMemoryWithIndex(req.body);
+    return res.send('ok');
+  } catch (err) {
+    return res.status(500).send('Unable to save');
+  }
+});
+
+/**
+ * Сохраняет ответ в файл
+ * Запрос: POST /saveAnswer { name: "answer.md", content: "..." }
+ */
+app.post('/saveAnswer', (req, res) => {
+  const { name, content } = req.body;
+  if (!name || !content) {
+    return res.status(400).send('Missing parameters');
+  }
+  try {
+    chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    return res.send('ok');
+  } catch (err) {
+    return res.status(500).send('Unable to save answer');
+  }
+});
+
+/**
+ * Возвращает сохранённый токен
+ */
+app.post('/getToken', (req, res) => {
+  return res.json({ token: memory_mode.repo_state.token });
+});
+
+/**
+ * Сохраняет токен
+ * Запрос: POST /setToken { token: "..." }
+ */
+app.post('/setToken', (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).send('Missing token');
+  }
+  memory_mode.repo_state.token = token;
+  return res.send('ok');
+});
+
+/**
+ * Загружает файл памяти в контекст
+ * Запрос: POST /loadMemoryToContext { filename: "file.md" }
+ */
+app.post('/loadMemoryToContext', async (req, res) => {
+  const { filename } = req.body;
+  if (!filename) {
+    return res.status(400).send('Missing filename');
+  }
+  try {
+    await memory.loadMemoryFile(filename);
+    return res.send('ok');
+  } catch (err) {
+    return res.status(500).send('Unable to load memory');
+  }
+});
+
+/**
+ * Загружает контекст из index.json
+ */
+app.post('/loadContextFromIndex', async (req, res) => {
+  try {
+    await memory.loadMemoryFile('index.json');
+    return res.send('ok');
+  } catch (err) {
+    return res.status(500).send('Unable to load context');
+  }
+});
+
+/**
+ * Базовая настройка чата
+ */
+app.post('/chat/setup', (req, res) => {
+  return res.send('ok');
+});
+
+/**
+ * Обновляет индекс памяти
+ */
+app.post('/updateIndex', (req, res) => {
+  return res.send('ok');
+});
+
+/**
+ * Сохраняет инструкции в новую версию
+ */
+app.post('/version/commit', (req, res) => {
+  return res.send('ok');
+});
+
+/**
+ * Откатывает инструкции до предыдущей версии
+ */
+app.post('/version/rollback', (req, res) => {
+  return res.send('ok');
+});
+
+/**
+ * Возвращает список версий
+ */
+app.post('/version/list', (req, res) => {
+  return res.send('ok');
+});
+
+/**
+ * Возвращает информацию о профиле
+ */
+app.get('/profile', (req, res) => {
+  return res.json({ memory: memory.memory_state, repo: memory_mode.repo_state });
+});
+
+/**
+ * Проверка доступности сервера
+ */
+app.get('/health', (req, res) => {
+  return res.send('ok');
+});
+
+/**
+ * Документация API (заглушка)
+ */
+app.get('/docs', (req, res) => {
+  return res.send('Sofia API docs');
+});
+
+/**
+ * Читает активный план
+ */
+app.get('/plan', (req, res) => {
+  try {
+    const plan = memory.getCurrentPlan();
+    return res.send(plan);
+  } catch (err) {
+    return res.status(500).send('Unable to read plan');
+  }
+});
+
+/**
+ * Возвращает статус токена
+ */
+app.get('/token/status', (req, res) => {
+  return res.json({ active: memory_mode.repo_state.active });
+});
+
+/**
+ * Возвращает список файлов памяти
+ */
+app.post('/list', async (req, res) => {
+  try {
+    const files = await memory.listMemoryFiles();
+    return res.json({ files });
+  } catch (err) {
+    return res.status(500).send('Unable to list files');
+  }
+});
+
+/**
  * Обрабатывает команду из запроса ?message=
  * Пример: GET /ping?message=/save_memory
  */
 app.get('/ping', async (req, res) => {
   const message = req.query.message || '';
+  if (!message) {
+    return res.send('pong');
+  }
   if (!message.startsWith('/')) {
     return res.status(400).send('Missing or invalid command');
   }
