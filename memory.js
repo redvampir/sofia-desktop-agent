@@ -5,9 +5,15 @@ const path = require('path');
 
 /**
  * Объект состояния локальной памяти
- * @type {{memory_path: string, last_plan: string}}
+ * base_path    - базовая директория, в которой хранятся папки проектов
+ * folder       - текущая папка проекта
+ * memory_path  - полный путь до активной памяти
+ * last_plan    - кеш последнего плана
+ * @type {{base_path: string, folder: string, memory_path: string, last_plan: string}}
  */
 const memory_state = {
+  base_path: '',
+  folder: '',
   memory_path: '',
   last_plan: ''
 };
@@ -17,10 +23,14 @@ const memory_state = {
  * Аргументы:
  *     folder (string): путь до папки памяти
  */
-function set_memory_path(folder) {
+function setLocalMemoryBasePath(folder) {
   const resolved = path.resolve(folder);
   fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
-  memory_state.memory_path = resolved;
+  memory_state.base_path = resolved;
+  // обновляем полный путь если уже выбрана папка проекта
+  if (memory_state.folder) {
+    memory_state.memory_path = path.join(memory_state.base_path, memory_state.folder);
+  }
 }
 
 /**
@@ -28,9 +38,13 @@ function set_memory_path(folder) {
  * Аргументы:
  *     folder (string): путь до новой папки
  */
-function switch_memory_folder(folder) {
-  const resolved = path.resolve(folder);
+function setMemoryFolder(name) {
+  if (!memory_state.base_path) {
+    throw new Error('Базовый путь не задан');
+  }
+  const resolved = path.join(memory_state.base_path, name);
   fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
+  memory_state.folder = name;
   memory_state.memory_path = resolved;
 }
 
@@ -39,15 +53,26 @@ function switch_memory_folder(folder) {
  * Возвращает:
  *     string — путь файла плана или текст по умолчанию
  */
-function get_current_plan() {
-  return memory_state.last_plan || 'План отсутствует';
+function getCurrentPlan() {
+  if (!memory_state.memory_path) {
+    return 'Память не настроена';
+  }
+  const planPath = path.join(memory_state.memory_path, 'plan.md');
+  const indexPath = path.join(memory_state.memory_path, 'index.json');
+  if (fs.existsSync(planPath)) {
+    return fs.readFileSync(planPath, 'utf8');
+  }
+  if (fs.existsSync(indexPath)) {
+    return fs.readFileSync(indexPath, 'utf8');
+  }
+  return 'План отсутствует';
 }
 
 module.exports = {
   memory_state,
-  set_memory_path,
-  switch_memory_folder,
-  get_current_plan
+  setLocalMemoryBasePath,
+  setMemoryFolder,
+  getCurrentPlan
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
