@@ -153,6 +153,82 @@ async function loadMemoryFile(filename) {
   return content;
 }
 
+/**
+ * Сохраняет файл и обновляет index.json
+ * Аргументы:
+ *     filename (string): относительный путь файла
+ *     content (string): содержимое
+ *     type (string): тип памяти
+ */
+async function saveMemoryWithIndex(filename, content, type = 'memory') {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const full_path = path.join(memory_state.memory_path, filename);
+  await fs.promises.mkdir(path.dirname(full_path), { recursive: true });
+  await fs.promises.writeFile(full_path, content, 'utf8');
+
+  const index_path = path.join(memory_state.memory_path, 'index.json');
+  let index = [];
+  if (fs.existsSync(index_path)) {
+    try {
+      const data = await fs.promises.readFile(index_path, 'utf8');
+      index = JSON.parse(data);
+    } catch (err) {
+      console.error('Ошибка чтения index.json:', err.message);
+    }
+  }
+
+  const entry = {
+    path: filename,
+    title: path.basename(filename, path.extname(filename)),
+    type,
+    description: '',
+    lastModified: new Date().toISOString()
+  };
+
+  const existing = index.find((i) => i.path === filename);
+  if (existing) {
+    existing.title = entry.title;
+    existing.type = entry.type;
+    existing.description = entry.description;
+    existing.lastModified = entry.lastModified;
+  } else {
+    index.push(entry);
+  }
+
+  await fs.promises.writeFile(index_path, JSON.stringify(index, null, 2));
+  return true;
+}
+
+/**
+ * Возвращает список файлов из index.json
+ * Аргументы:
+ *     dir (string): относительный путь папки
+ * Возвращает:
+ *     Promise<Object[]> — данные файлов
+ */
+async function listFiles(dir = '') {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const index_path = path.join(memory_state.memory_path, 'index.json');
+  let index = [];
+  if (fs.existsSync(index_path)) {
+    try {
+      const data = await fs.promises.readFile(index_path, 'utf8');
+      index = JSON.parse(data);
+    } catch (err) {
+      console.error('Ошибка чтения index.json:', err.message);
+    }
+  }
+
+  if (dir) {
+    return index.filter((e) => e.path.startsWith(dir));
+  }
+  return index;
+}
+
 module.exports = {
   memory_state,
   setLocalMemoryBasePath,
@@ -162,7 +238,9 @@ module.exports = {
   writeMemoryFile,
   readMemoryFile,
   listMemoryFiles,
-  loadMemoryFile
+  loadMemoryFile,
+  saveMemoryWithIndex,
+  listFiles
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
