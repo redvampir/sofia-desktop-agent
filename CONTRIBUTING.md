@@ -1,4 +1,4 @@
-# CONTRIBUTING.md — Sofia Desktop
+# CONTRIBUTING.md — Sofia Desktop Agent
 
 ## General Guidelines for Contributors and Codex (AI Generation)
 
