@@ -89,12 +89,32 @@ function writeMemoryFile(filename, content) {
   return filePath;
 }
 
+/**
+ * Читает содержимое файла из выбранной памяти
+ * Аргументы:
+ *     filename (string): имя файла
+ * Возвращает:
+ *     Promise<string> — содержимое файла
+ */
+async function readMemoryFile(filename) {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const filePath = path.join(memory_state.memory_path, 'memory', filename);
+  try {
+    return await fs.promises.readFile(filePath, 'utf8');
+  } catch (err) {
+    throw new Error('Файл не найден');
+  }
+}
+
 module.exports = {
   memory_state,
   setLocalMemoryBasePath,
   setMemoryFolder,
   getCurrentPlan,
-  writeMemoryFile
+  writeMemoryFile,
+  readMemoryFile
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
