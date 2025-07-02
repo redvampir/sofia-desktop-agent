@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
+const chat_commands = require('../chat_commands');
 
 // Конфигурация API
 const config = {
@@ -76,6 +77,36 @@ app.post('/write', (req, res) => {
     return res.send('File saved successfully');
   } catch (err) {
     return res.status(500).send('Unable to save file');
+  }
+});
+
+/**
+ * Обрабатывает команду из запроса ?message=
+ * Пример: GET /ping?message=/save_memory
+ */
+app.get('/ping', async (req, res) => {
+  const message = req.query.message || '';
+  if (!message.startsWith('/')) {
+    return res.status(400).send('Missing or invalid command');
+  }
+
+  try {
+    const handled = await Promise.any([
+      chat_commands.handle_save_memory(message),
+      chat_commands.handle_save_local_file(message),
+      chat_commands.handle_load_memory(message),
+      chat_commands.handle_load_local_file(message),
+      chat_commands.handle_list_local_files(message),
+      chat_commands.handle_switch_memory_mode(message)
+    ]);
+
+    if (handled) {
+      return res.send(`✅ Команда "${message}" обработана.`);
+    } else {
+      return res.status(400).send(`❌ Неизвестная команда: "${message}"`);
+    }
+  } catch (err) {
+    return res.status(500).send(`❌ Ошибка при выполнении команды: ${err.message}`);
   }
 });
 
