@@ -5,11 +5,7 @@ const path = require('path');
 const chat_commands = require('../chat_commands');
 const memory = require('../memory');
 const memory_mode = require('../memory_mode');
-
-// Конфигурация API
-const config = {
-  memoryPath: './memory'
-};
+const config = require('../config');
 
 const app = express();
 const PORT = 4465;
@@ -25,26 +21,14 @@ app.get('/', (req, res) => {
  * Читает указанный файл из папки памяти
  * Запрос: GET /read?file=filename.md
  */
-app.get('/read', (req, res) => {
+app.get('/read', async (req, res) => {
   const filename = req.query.file;
   if (!filename) {
     return res.status(400).send('Missing file parameter');
   }
 
-  const memory_path = path.resolve(config.memoryPath || './memory');
-  const file_path = path.resolve(memory_path, filename);
-
-  if (!file_path.startsWith(memory_path)) {
-    return res.status(400).send('Invalid file path');
-  }
-
-  // Проверяем существование файла
-  if (!fs.existsSync(file_path)) {
-    return res.status(404).send('File not found');
-  }
-
   try {
-    const content = fs.readFileSync(file_path, 'utf8');
+    const content = await memory.readMemoryFile(filename);
     return res.send(content);
   } catch (err) {
     return res.status(500).send('Unable to read file');
@@ -66,16 +50,8 @@ app.post('/write', (req, res) => {
     return res.status(400).send('Invalid filename');
   }
 
-  const memory_path = path.resolve(config.memoryPath || './memory');
-  const file_path = path.join(memory_path, file);
-
-  if (!file_path.startsWith(memory_path)) {
-    return res.status(400).send('Invalid filename');
-  }
-
   try {
-    fs.mkdirSync(memory_path, { recursive: true });
-    fs.writeFileSync(file_path, content, 'utf8');
+    memory.writeMemoryFile(file, content);
     return res.send('File saved successfully');
   } catch (err) {
     return res.status(500).send('Unable to save file');
@@ -182,6 +158,28 @@ app.post('/saveAnswer', (req, res) => {
  */
 app.post('/getToken', (req, res) => {
   return res.json({ token: memory_mode.repo_state.token });
+});
+
+/**
+ * Устанавливает путь к локальной памяти
+ * Запрос: POST /set_local_path { path: "C:/path" }
+ */
+app.post('/set_local_path', (req, res) => {
+  const { path: localPath } = req.body;
+  if (!localPath) {
+    return res.status(400).send('Missing path');
+  }
+  try {
+    const resolved = path.resolve(localPath);
+    if (!fs.existsSync(resolved)) {
+      fs.mkdirSync(resolved, { recursive: true });
+    }
+    memory.setMemoryPath(resolved);
+    config.setMemoryPath(resolved);
+    return res.json({ status: 'success', path: resolved });
+  } catch (err) {
+    return res.status(500).send('Unable to set path');
+  }
 });
 
 /**
