@@ -116,6 +116,49 @@ function handle_save_memory(message, userId = 'user') {
 }
 
 /**
+ * Обрабатывает команду загрузки памяти из файла
+ * Аргументы:
+ *     message (string): текст команды
+ * Возвращает:
+ *     Promise<boolean> — была ли обработана команда
+ */
+async function handle_load_memory(message) {
+  if (!message.startsWith('/load_memory')) {
+    return false;
+  }
+  const params = parse_arguments(message);
+  const filename = params.filename;
+  if (!filename || !helpers.validate_filename(filename)) {
+    console.log('❌ Ошибка: укажите корректное имя файла');
+    return true;
+  }
+  try {
+    let content = '';
+    if (memory_mode.current_mode === 'github') {
+      content = memory_mode.loadMemoryFile({
+        repo: memory_mode.repo_state.repo,
+        token: memory_mode.repo_state.token,
+        filename,
+        type: memory_mode.repo_state.type
+      });
+    } else if (memory_mode.current_mode === 'local' && memory.memory_state.memory_path) {
+      content = await memory.loadMemoryFile(filename);
+    } else {
+      console.log('❌ Ошибка: не выбран режим памяти');
+      return true;
+    }
+    if (content === '') {
+      console.log(`❌ Файл ${filename} пустой или недоступен.`);
+    } else {
+      console.log(`✅ Память "${filename}" загружена. Теперь она активна в текущей сессии.`);
+    }
+  } catch (err) {
+    console.log(`❌ Ошибка: не удалось загрузить файл ${filename}`);
+  }
+  return true;
+}
+
+/**
  * Обрабатывает команду загрузки локального файла
  * Аргументы:
  *     message (string): текст команды
@@ -218,6 +261,7 @@ function handle_switch_memory_mode(message) {
 module.exports = {
   handle_save_local_file,
   handle_save_memory,
+  handle_load_memory,
   handle_load_local_file,
   handle_list_local_files,
   handle_switch_memory_mode

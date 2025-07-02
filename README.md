@@ -72,6 +72,7 @@ sofia-desktop-agent/
     - /set_memory_folder name="..." — переключение проекта
     - /switch_memory_repo type=local path="..." — смена источника памяти
     - /switch_memory_mode mode=local|github — выбор активного режима
+    - /load_memory filename="..." — загрузка файла памяти
 
 ## Разработка
 
