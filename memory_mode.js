@@ -13,6 +13,12 @@ const repo_state = {
 };
 
 /**
+ * Текущий активный режим памяти
+ * @type {string}
+ */
+let current_mode = 'local';
+
+/**
  * Подключает удалённую память через токен и ссылку на репозиторий
  * Аргументы:
  *     token (string): персональный токен GitHub
@@ -49,6 +55,7 @@ function saveMemoryWithIndex(options) {
 
 module.exports = {
   repo_state,
+  current_mode,
   switchMemoryRepo,
   saveMemoryWithIndex
 };
