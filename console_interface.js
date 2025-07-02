@@ -105,7 +105,7 @@ function show_plan() {
  * Отображает текущее состояние памяти
  */
 function show_status() {
-  const type = memory_mode.repo_state.active ? memory_mode.repo_state.type : 'Локальная';
+  const type = memory_mode.current_mode === 'github' ? 'github' : 'Локальная';
   console.log(chalk.yellow(`Активная память: ${type}`));
   console.log(chalk.yellow(`Путь: ${memory.memory_state.memory_path || 'не задан'}`));
 }
