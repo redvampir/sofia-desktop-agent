@@ -3,11 +3,12 @@
 
 /**
  * Состояние удалённой памяти из GitHub
- * @type {{token: string, repo_link: string, active: boolean}}
- */
-const github_state = {
+ * @type {{type: string, token: string, repo: string, active: boolean}}
+*/
+const repo_state = {
+  type: '',
   token: '',
-  repo_link: '',
+  repo: '',
   active: false
 };
 
@@ -17,15 +18,19 @@ const github_state = {
  *     token (string): персональный токен GitHub
  *     repo (string): ссылка на репозиторий
  */
-function connect_github_memory(token, repo) {
-  github_state.token = token;
-  github_state.repo_link = repo;
-  github_state.active = true;
+function switchMemoryRepo(type = 'github', repo, token) {
+  if (type !== 'github') {
+    throw new Error('Поддерживается только GitHub');
+  }
+  repo_state.type = type;
+  repo_state.token = token;
+  repo_state.repo = repo;
+  repo_state.active = true;
 }
 
 module.exports = {
-  github_state,
-  connect_github_memory
+  repo_state,
+  switchMemoryRepo
 };
 
 // Модуль описывает подключение к GitHub. В дальнейшем здесь может быть
