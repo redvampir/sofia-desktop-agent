@@ -53,11 +53,27 @@ function saveMemoryWithIndex(options) {
   return true;
 }
 
+/**
+ * Загружает файл памяти из удалённого репозитория
+ * Аргументы:
+ *     options (Object): параметры загрузки
+ *         repo (string): репозиторий
+ *         token (string): токен
+ *         filename (string): имя файла
+ * Возвращает:
+ *     string — содержимое файла (заглушка)
+ */
+function loadMemoryFile(options) {
+  console.log(`Загрузка файла ${options.filename} из репозитория ${options.repo}`);
+  return '';
+}
+
 module.exports = {
   repo_state,
   current_mode,
   switchMemoryRepo,
-  saveMemoryWithIndex
+  saveMemoryWithIndex,
+  loadMemoryFile
 };
 
 // Модуль описывает подключение к GitHub. В дальнейшем здесь может быть

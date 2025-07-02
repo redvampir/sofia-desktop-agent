@@ -9,13 +9,15 @@ const path = require('path');
  * folder       - текущая папка проекта
  * memory_path  - полный путь до активной памяти
  * last_plan    - кеш последнего плана
- * @type {{base_path: string, folder: string, memory_path: string, last_plan: string}}
+ * active_memory_file - имя загруженного файла памяти
+ * @type {{base_path: string, folder: string, memory_path: string, last_plan: string, active_memory_file: string}}
  */
 const memory_state = {
   base_path: '',
   folder: '',
   memory_path: '',
-  last_plan: ''
+  last_plan: '',
+  active_memory_file: ''
 };
 
 /**
@@ -124,6 +126,20 @@ async function listMemoryFiles() {
     .map((f) => f.name);
 }
 
+/**
+ * Загружает указанный файл памяти и делает его активным
+ * Аргументы:
+ *     filename (string): имя файла
+ * Возвращает:
+ *     Promise<string> — содержимое файла
+ */
+async function loadMemoryFile(filename) {
+  const content = await readMemoryFile(filename);
+  memory_state.last_plan = content;
+  memory_state.active_memory_file = filename;
+  return content;
+}
+
 module.exports = {
   memory_state,
   setLocalMemoryBasePath,
@@ -131,7 +147,8 @@ module.exports = {
   getCurrentPlan,
   writeMemoryFile,
   readMemoryFile,
-  listMemoryFiles
+  listMemoryFiles,
+  loadMemoryFile
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
