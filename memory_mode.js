@@ -28,9 +28,29 @@ function switchMemoryRepo(type = 'github', repo, token) {
   repo_state.active = true;
 }
 
+/**
+ * Сохраняет файл памяти в удалённый репозиторий
+ * Аргументы:
+ *     options (Object): параметры сохранения
+ *         repo (string): репозиторий
+ *         token (string): токен
+ *         filename (string): имя файла
+ *         content (string): содержимое
+ *         userId (string): идентификатор пользователя
+ *         type (string): тип репозитория
+ * Возвращает:
+ *     boolean — результат операции (заглушка)
+ */
+function saveMemoryWithIndex(options) {
+  // Заглушка для сохранения в GitHub
+  console.log(`Сохранение файла ${options.filename} в репозитории ${options.repo}`);
+  return true;
+}
+
 module.exports = {
   repo_state,
-  switchMemoryRepo
+  switchMemoryRepo,
+  saveMemoryWithIndex
 };
 
 // Модуль описывает подключение к GitHub. В дальнейшем здесь может быть
