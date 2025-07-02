@@ -36,6 +36,19 @@ function setLocalMemoryBasePath(folder) {
 }
 
 /**
+ * Устанавливает полный путь к памяти без использования подпапок
+ * Аргументы:
+ *     folder (string): путь до директории памяти
+ */
+function setMemoryPath(folder) {
+  const resolved = path.resolve(folder);
+  fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
+  memory_state.base_path = resolved;
+  memory_state.folder = '';
+  memory_state.memory_path = resolved;
+}
+
+/**
  * Переключается на другую папку памяти после проверки доступности
  * Аргументы:
  *     folder (string): путь до новой папки
@@ -144,6 +157,7 @@ module.exports = {
   memory_state,
   setLocalMemoryBasePath,
   setMemoryFolder,
+  setMemoryPath,
   getCurrentPlan,
   writeMemoryFile,
   readMemoryFile,
