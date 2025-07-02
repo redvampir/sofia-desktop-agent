@@ -62,8 +62,40 @@ function handle_save_local_file(message, userId = 'user') {
   return true;
 }
 
+/**
+ * Обрабатывает команду загрузки локального файла
+ * Аргументы:
+ *     message (string): текст команды
+ * Возвращает:
+ *     boolean — была ли обработана команда
+ */
+async function handle_load_local_file(message) {
+  if (!message.startsWith('/load_local_file')) {
+    return false;
+  }
+  const params = parse_arguments(message);
+  const filename = params.name;
+  if (!filename) {
+    console.log('❌ Ошибка: не указано имя файла');
+    return true;
+  }
+  if (memory_mode.repo_state.active) {
+    console.log('❗ Активен GitHub-режим. Загрузка из локального файла невозможна.');
+    return true;
+  }
+  try {
+    const content = await memory.readMemoryFile(filename);
+    const prepared = content.replace(/\\n/g, '\n');
+    console.log(`📤 Загружено: ${filename}\n---\n${prepared}`);
+  } catch (err) {
+    console.log(`❌ Файл ${filename} не найден или недоступен.`);
+  }
+  return true;
+}
+
 module.exports = {
-  handle_save_local_file
+  handle_save_local_file,
+  handle_load_local_file
 };
 
 // Модуль предназначен для разбора команд из чата и их выполнения.
