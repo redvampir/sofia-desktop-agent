@@ -74,7 +74,10 @@ app.post('/save', (req, res) => {
     return res.status(400).send('Missing name or content');
   }
   try {
-    chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    const saved = chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    if (!saved) {
+      return res.status(500).send('Unable to save');
+    }
     return res.send('saved');
   } catch (err) {
     return res.status(500).send('Unable to save');
@@ -123,7 +126,10 @@ app.post('/saveLessonPlan', (req, res) => {
   const { filename } = req.body;
   const message = filename ? `/save_memory filename="${filename}"` : '/save_memory';
   try {
-    chat_commands.handle_save_memory(message);
+    const saved = chat_commands.handle_save_memory(message);
+    if (!saved) {
+      return res.status(500).send('Unable to save plan');
+    }
     return res.send('ok');
   } catch (err) {
     return res.status(500).send('Unable to save plan');
@@ -154,7 +160,10 @@ app.post('/saveAnswer', (req, res) => {
     return res.status(400).send('Missing parameters');
   }
   try {
-    chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    const saved = chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    if (!saved) {
+      return res.status(500).send('Unable to save answer');
+    }
     return res.send('ok');
   } catch (err) {
     return res.status(500).send('Unable to save answer');
