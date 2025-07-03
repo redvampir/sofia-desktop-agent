@@ -74,8 +74,7 @@ sofia-desktop-agent/
 - Формировать команды в формате:
     - /set_local_path path="..." — указание папки памяти
     - /set_memory_folder name="..." — переключение проекта
-    - /switch_memory_repo type=local path="..." — смена источника памяти
-    - /switch_memory_mode mode=local|github — выбор активного режима
+    - /switch_memory_mode mode=local|github — смена источника памяти
     - /load_memory filename="..." — загрузка файла памяти
 
 ## Разработка
