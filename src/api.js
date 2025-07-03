@@ -178,10 +178,6 @@ app.post('/set_local_path', (req, res) => {
 });
 
 /**
- * Переключает режим памяти
- */
-
-/**
  * Загружает файл памяти в контекст
  * Запрос: POST /loadMemoryToContext { filename: "file.md" }
  */
