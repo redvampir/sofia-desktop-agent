@@ -203,7 +203,7 @@ app.post('/set_local_path', (req, res) => {
 /**
  * Переключает режим памяти
  */
-app.post('/switch_memory_repo', (req, res) => {
+function switchMemoryModeHandler(req, res) {
   const { type } = req.body;
   if (!type) {
     return res.status(400).send('Missing type');
@@ -213,10 +213,13 @@ app.post('/switch_memory_repo', (req, res) => {
     memory_mode.current_mode = type;
     return res.json({ success: true, mode: type });
   } catch (err) {
-    console.error('switch_memory_repo:', err.message);
+    console.error('switch_memory_mode:', err.message);
     return res.status(500).json({ error: err.message });
   }
-});
+}
+
+app.post('/switch_memory_mode', switchMemoryModeHandler);
+app.post('/switch_memory_repo', switchMemoryModeHandler);
 
 /**
  * Сохраняет токен
