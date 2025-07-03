@@ -44,7 +44,7 @@ function handle_save_local_file(message, userId = 'user') {
   const content = params.content || '';
   if (!filename) {
     console.log('❌ Ошибка: не указано имя файла');
-    return true;
+    return false;
   }
   try {
     if (memory_mode.current_mode === 'github') {
@@ -62,9 +62,11 @@ function handle_save_local_file(message, userId = 'user') {
       console.log(`✅ Успешно сохранено: ${savedPath}`);
     } else {
       console.log('❌ Ошибка: не выбран режим памяти');
+      return false;
     }
   } catch (err) {
     console.log('❌ Ошибка: не удалось сохранить файл');
+    throw err;
   }
   return true;
 }
@@ -85,7 +87,7 @@ function handle_save_memory(message, userId = 'user') {
   let filename = params.filename;
   if (filename && !helpers.validate_filename(filename)) {
     console.log('❌ Ошибка: имя файла должно оканчиваться на .md или .txt');
-    return true;
+    return false;
   }
   if (!filename) {
     const date = new Date().toISOString().split('T')[0];
@@ -108,9 +110,11 @@ function handle_save_memory(message, userId = 'user') {
       console.log(`✅ Память сохранена как "${filename}"`);
     } else {
       console.log('❌ Ошибка: не выбран режим памяти');
+      return false;
     }
   } catch (err) {
     console.log('❌ Ошибка: не удалось сохранить память');
+    throw err;
   }
   return true;
 }
