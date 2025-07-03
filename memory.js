@@ -21,6 +21,30 @@ const memory_state = {
 };
 
 /**
+ * Resolves a path relative to the memory root and ensures
+ * that it stays within the memory directory.
+ * Throws an error if the path is invalid or escapes the memory folder.
+ *
+ * @param {string} filename relative path inside memory
+ * @returns {string} resolved absolute path
+ */
+function resolveMemoryPath(filename) {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  if (path.isAbsolute(filename) || filename.split(/[\\/]/).includes('..')) {
+    throw new Error('Некорректный путь');
+  }
+
+  const full = path.resolve(memory_state.memory_path, filename);
+  const rel = path.relative(memory_state.memory_path, full);
+  if (rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new Error('Некорректный путь');
+  }
+  return full;
+}
+
+/**
  * Проверяет доступность указанной папки и устанавливает её в качестве памяти
  * Аргументы:
  *     folder (string): путь до папки памяти
@@ -118,14 +142,11 @@ function getCurrentPlan() {
  *     string — полный путь сохранённого файла
  */
 function writeMemoryFile(filename, content) {
-  if (!memory_state.memory_path) {
-    throw new Error('Память не настроена');
-  }
-  const dirPath = path.join(memory_state.memory_path, 'memory');
+  const filePath = resolveMemoryPath(path.join('memory', filename));
+  const dirPath = path.dirname(filePath);
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
-  const filePath = path.join(dirPath, filename);
   fs.writeFileSync(filePath, content, 'utf8');
   return filePath;
 }
@@ -138,10 +159,7 @@ function writeMemoryFile(filename, content) {
  *     Promise<string> — содержимое файла
  */
 async function readMemoryFile(filename) {
-  if (!memory_state.memory_path) {
-    throw new Error('Память не настроена');
-  }
-  const filePath = path.join(memory_state.memory_path, 'memory', filename);
+  const filePath = resolveMemoryPath(path.join('memory', filename));
   try {
     return await fs.promises.readFile(filePath, 'utf8');
   } catch (err) {
@@ -187,10 +205,7 @@ async function loadMemoryFile(filename) {
  *     type (string): тип памяти
  */
 async function saveMemoryWithIndex(filename, content, type = 'memory') {
-  if (!memory_state.memory_path) {
-    throw new Error('Память не настроена');
-  }
-  const full_path = path.join(memory_state.memory_path, filename);
+  const full_path = resolveMemoryPath(filename);
   await fs.promises.mkdir(path.dirname(full_path), { recursive: true });
   await fs.promises.writeFile(full_path, content, 'utf8');
 
@@ -364,7 +379,8 @@ module.exports = {
   rollbackInstructionVersion,
   listInstructionVersions,
   listFiles,
-  initializeMemory
+  initializeMemory,
+  resolveMemoryPath
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
