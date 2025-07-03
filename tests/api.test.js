@@ -115,3 +115,39 @@ test('setup and version API', async () => {
   assert.ok(Array.isArray(versions));
   assert.ok(versions.length >= 1);
 });
+
+test('path traversal is blocked', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mem-'));
+
+  let res = await fetch('http://localhost:4465/set_local_path', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: tmp })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/chat/setup', { method: 'POST' });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/saveMemoryWithIndex', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: '../evil.md', content: 'bad' })
+  });
+  assert.equal(res.status, 500);
+
+  const abs = path.join(tmp, 'abs.md');
+  res = await fetch('http://localhost:4465/saveMemoryWithIndex', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: abs, content: 'bad' })
+  });
+  assert.equal(res.status, 500);
+
+  res = await fetch('http://localhost:4465/read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: '../evil.md' })
+  });
+  assert.equal(res.status, 500);
+});
