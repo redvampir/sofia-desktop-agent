@@ -1,7 +1,6 @@
 // chat_commands.js
 // Обработчик команд из чата
 const memory = require('./memory');
-const memory_mode = require('./memory_mode');
 const path = require('path');
 const fs = require('fs');
 const helpers = require('./helpers');
@@ -47,21 +46,11 @@ function handle_save_local_file(message, userId = 'user') {
     return false;
   }
   try {
-    if (memory_mode.current_mode === 'github') {
-      memory_mode.saveMemoryWithIndex({
-        repo: memory_mode.repo_state.repo,
-        token: memory_mode.repo_state.token,
-        filename,
-        content,
-        userId,
-        type: memory_mode.repo_state.type
-      });
-      console.log(`✅ Успешно сохранено: ${filename}`);
-    } else if (memory_mode.current_mode === 'local' && memory.memory_state.memory_path) {
+    if (memory.memory_state.memory_path) {
       const savedPath = memory.writeMemoryFile(filename, content);
       console.log(`✅ Успешно сохранено: ${savedPath}`);
     } else {
-      console.log('❌ Ошибка: не выбран режим памяти');
+      console.log('❌ Ошибка: путь памяти не задан');
       return false;
     }
   } catch (err) {
@@ -95,21 +84,11 @@ function handle_save_memory(message, userId = 'user') {
   }
   const content = memory.getCurrentPlan();
   try {
-    if (memory_mode.current_mode === 'github') {
-      memory_mode.saveMemoryWithIndex({
-        repo: memory_mode.repo_state.repo,
-        token: memory_mode.repo_state.token,
-        filename,
-        content,
-        userId,
-        type: memory_mode.repo_state.type
-      });
-      console.log(`✅ Файл "${filename}" успешно сохранён в режиме GitHub.`);
-    } else if (memory_mode.current_mode === 'local' && memory.memory_state.memory_path) {
+    if (memory.memory_state.memory_path) {
       memory.writeMemoryFile(filename, content);
       console.log(`✅ Память сохранена как "${filename}"`);
     } else {
-      console.log('❌ Ошибка: не выбран режим памяти');
+      console.log('❌ Ошибка: путь памяти не задан');
       return false;
     }
   } catch (err) {
@@ -138,17 +117,10 @@ async function handle_load_memory(message) {
   }
   try {
     let content = '';
-    if (memory_mode.current_mode === 'github') {
-      content = memory_mode.loadMemoryFile({
-        repo: memory_mode.repo_state.repo,
-        token: memory_mode.repo_state.token,
-        filename,
-        type: memory_mode.repo_state.type
-      });
-    } else if (memory_mode.current_mode === 'local' && memory.memory_state.memory_path) {
+    if (memory.memory_state.memory_path) {
       content = await memory.loadMemoryFile(filename);
     } else {
-      console.log('❌ Ошибка: не выбран режим памяти');
+      console.log('❌ Ошибка: путь памяти не задан');
       return true;
     }
     if (content === '') {
@@ -179,10 +151,6 @@ async function handle_load_local_file(message) {
     console.log('❌ Ошибка: не указано имя файла');
     return true;
   }
-  if (memory_mode.current_mode === 'github') {
-    console.log('❗ Активен GitHub-режим. Загрузка из локального файла невозможна.');
-    return true;
-  }
   try {
     const content = await memory.readMemoryFile(filename);
     const prepared = content.replace(/\\n/g, '\n');
@@ -204,10 +172,6 @@ async function handle_list_local_files(message) {
   if (!message.startsWith('/list_local_files')) {
     return false;
   }
-  if (memory_mode.current_mode === 'github') {
-    console.log('⚠️ Команда /list_local_files доступна только в локальном режиме памяти.');
-    return true;
-  }
   if (!memory.memory_state.base_path || !memory.memory_state.folder) {
     const full = path.join(memory.memory_state.base_path || '', memory.memory_state.folder || '');
     console.log(`❌ Ошибка: Папка памяти не найдена: ${full}`);
@@ -227,48 +191,12 @@ async function handle_list_local_files(message) {
   return true;
 }
 
-/**
- * Обрабатывает команду переключения режима памяти
- * Аргументы:
- *     message (string): текст команды
- * Возвращает:
- *     boolean — была ли обработана команда
- */
-function handle_switch_memory_mode(message) {
-  if (!message.startsWith('/switch_memory_mode')) {
-    return false;
-  }
-  const params = parse_arguments(message);
-  const mode = params.mode;
-  if (mode !== 'local' && mode !== 'github') {
-    console.log('❌ Ошибка: допустимые значения mode=local или mode=github');
-    return true;
-  }
-  if (mode === 'github') {
-    if (!memory_mode.repo_state.active) {
-      console.log('❌ Репозиторий GitHub не подключен. Используйте команду `/set_repo` перед переключением.');
-      return true;
-    }
-    memory_mode.current_mode = 'github';
-    console.log('✅ Память переключена в режим: GITHUB');
-  } else {
-    if (!memory.memory_state.base_path) {
-      console.log('❌ Базовый путь не задан. Используйте команду `/set_local_path` перед переключением.');
-      return true;
-    }
-    memory_mode.current_mode = 'local';
-    console.log('✅ Память переключена в режим: LOCAL');
-  }
-  return true;
-}
-
 module.exports = {
   handle_save_local_file,
   handle_save_memory,
   handle_load_memory,
   handle_load_local_file,
-  handle_list_local_files,
-  handle_switch_memory_mode
+  handle_list_local_files
 };
 
 // Модуль предназначен для разбора команд из чата и их выполнения.

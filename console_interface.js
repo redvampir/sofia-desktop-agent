@@ -3,7 +3,6 @@
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const memory = require('./memory');
-const memory_mode = require('./memory_mode');
 
 /**
  * Запрашивает у пользователя действие и выполняет выбранную команду
@@ -16,7 +15,6 @@ async function main_menu() {
     choices: [
       { name: '📁 Задать папку памяти', value: 'set_memory_path' },
       { name: '📂 Переключиться на другую память', value: 'switch_memory_folder' },
-      { name: '🧠 Подключить GitHub память', value: 'connect_github' },
       { name: '📄 Показать текущий план/контекст', value: 'show_plan' },
       { name: '🚪 Выйти', value: 'exit' }
     ]
@@ -28,9 +26,6 @@ async function main_menu() {
       break;
     case 'switch_memory_folder':
       await ask_switch_memory();
-      break;
-    case 'connect_github':
-      await ask_connect_github();
       break;
     case 'show_plan':
       show_plan();
@@ -78,21 +73,6 @@ async function ask_switch_memory() {
   }
 }
 
-/**
- * Запрашивает данные для подключения GitHub памяти
- */
-async function ask_connect_github() {
-  const answers = await inquirer.prompt([
-    { type: 'input', name: 'repo', message: 'Ссылка на репозиторий:' },
-    { type: 'password', name: 'token', message: 'GitHub токен (опционально):' }
-  ]);
-  try {
-    memory_mode.switchMemoryRepo('github', answers.repo, answers.token);
-    console.log(chalk.green('✅ Успешно подключено: ' + answers.repo));
-  } catch (err) {
-    console.log(chalk.red('❌ Ошибка: ' + err.message));
-  }
-}
 
 /**
  * Выводит текущий план/контекст
@@ -105,8 +85,7 @@ function show_plan() {
  * Отображает текущее состояние памяти
  */
 function show_status() {
-  const type = memory_mode.current_mode === 'github' ? 'github' : 'Локальная';
-  console.log(chalk.yellow(`Активная память: ${type}`));
+  console.log(chalk.yellow('Активная память: локальная'));
   console.log(chalk.yellow(`Путь: ${memory.memory_state.memory_path || 'не задан'}`));
 }
 
