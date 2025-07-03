@@ -51,7 +51,14 @@ function resolveMemoryPath(filename) {
  */
 function setLocalMemoryBasePath(folder) {
   const resolved = path.resolve(folder);
-  fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
+  try {
+    fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw new Error('Директория не найдена');
+    }
+    throw new Error('Путь недоступен');
+  }
   memory_state.base_path = resolved;
   // обновляем полный путь если уже выбрана папка проекта
   if (memory_state.folder) {
@@ -66,7 +73,14 @@ function setLocalMemoryBasePath(folder) {
  */
 function setMemoryPath(folder) {
   const resolved = path.resolve(folder);
-  fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
+  try {
+    fs.accessSync(resolved, fs.constants.R_OK | fs.constants.W_OK);
+  } catch (err) {
+    if (err.code === 'ENOENT') {
+      throw new Error('Директория не найдена');
+    }
+    throw new Error('Путь недоступен');
+  }
   memory_state.base_path = resolved;
   memory_state.folder = '';
   memory_state.memory_path = resolved;
