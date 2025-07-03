@@ -1,6 +1,9 @@
 const { spawn } = require('node:child_process');
 const assert = require('node:assert');
 const { test, before, after } = require('node:test');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 
 let server;
 
@@ -50,4 +53,65 @@ test('POST /saveLessonPlan fails without memory path', async () => {
     body: JSON.stringify({ filename: 'plan.md' })
   });
   assert.equal(res.status, 500);
+});
+
+test('setup and version API', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mem-'));
+
+  let res = await fetch('http://localhost:4465/set_local_path', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: tmp })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/chat/setup', { method: 'POST' });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/write', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: 'other.md', content: 'hi' })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/updateIndex', { method: 'POST' });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/listFiles');
+  const files = (await res.json()).files;
+  assert.ok(files.some((f) => f.path === 'memory/other.md'));
+
+  res = await fetch('http://localhost:4465/saveMemoryWithIndex', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: 'memory/instructions.md', content: 'v1', type: 'instructions' })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/version/commit', { method: 'POST' });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/saveMemoryWithIndex', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: 'memory/instructions.md', content: 'v2', type: 'instructions' })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/version/rollback', { method: 'POST' });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/read', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: 'instructions.md' })
+  });
+  const text = await res.text();
+  assert.equal(text, 'v1');
+
+  res = await fetch('http://localhost:4465/version/list', { method: 'POST' });
+  const versions = (await res.json()).versions;
+  assert.ok(Array.isArray(versions));
+  assert.ok(versions.length >= 1);
 });

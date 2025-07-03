@@ -265,35 +265,65 @@ app.post('/loadContextFromIndex', async (req, res) => {
  * Базовая настройка чата
  */
 app.post('/chat/setup', (req, res) => {
-  return res.send('ok');
+  try {
+    memory.initializeMemory();
+    return res.send('ok');
+  } catch (err) {
+    console.error('chat/setup:', err.message);
+    return res.status(500).send('Unable to setup chat');
+  }
 });
 
 /**
  * Обновляет индекс памяти
  */
-app.post('/updateIndex', (req, res) => {
-  return res.send('ok');
+app.post('/updateIndex', async (req, res) => {
+  try {
+    await memory.updateIndex();
+    return res.send('ok');
+  } catch (err) {
+    console.error('updateIndex:', err.message);
+    return res.status(500).send('Unable to update index');
+  }
 });
 
 /**
  * Сохраняет инструкции в новую версию
  */
 app.post('/version/commit', (req, res) => {
-  return res.send('ok');
+  try {
+    memory.commitInstructionVersion();
+    return res.send('ok');
+  } catch (err) {
+    console.error('version/commit:', err.message);
+    return res.status(500).send('Unable to commit');
+  }
 });
 
 /**
  * Откатывает инструкции до предыдущей версии
  */
 app.post('/version/rollback', (req, res) => {
-  return res.send('ok');
+  try {
+    memory.rollbackInstructionVersion();
+    return res.send('ok');
+  } catch (err) {
+    console.error('version/rollback:', err.message);
+    return res.status(500).send('Unable to rollback');
+  }
 });
 
 /**
  * Возвращает список версий
  */
 app.post('/version/list', (req, res) => {
-  return res.send('ok');
+  try {
+    const versions = memory.listInstructionVersions();
+    return res.json({ versions });
+  } catch (err) {
+    console.error('version/list:', err.message);
+    return res.status(500).send('Unable to list versions');
+  }
 });
 
 /**
