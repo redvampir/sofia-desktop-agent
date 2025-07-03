@@ -49,6 +49,32 @@ function setMemoryPath(folder) {
 }
 
 /**
+ * Инициализирует структуру памяти и создаёт index.json
+ * Возвращает:
+ *     boolean — успешно ли выполнена операция
+ */
+function initializeMemory() {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+
+  const memoryDir = path.join(memory_state.memory_path, 'memory');
+  const versionsDir = path.join(memory_state.memory_path, 'versions');
+  if (!fs.existsSync(memoryDir)) {
+    fs.mkdirSync(memoryDir, { recursive: true });
+  }
+  if (!fs.existsSync(versionsDir)) {
+    fs.mkdirSync(versionsDir, { recursive: true });
+  }
+
+  const indexPath = path.join(memory_state.memory_path, 'index.json');
+  if (!fs.existsSync(indexPath)) {
+    fs.writeFileSync(indexPath, '[]', 'utf8');
+  }
+  return true;
+}
+
+/**
  * Переключается на другую папку памяти после проверки доступности
  * Аргументы:
  *     folder (string): путь до новой папки
@@ -202,6 +228,99 @@ async function saveMemoryWithIndex(filename, content, type = 'memory') {
 }
 
 /**
+ * Пересоздаёт index.json сканируя папку memory
+ * Возвращает:
+ *     boolean — результат операции
+ */
+async function updateIndex() {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const dirPath = path.join(memory_state.memory_path, 'memory');
+  const files = await fs.promises.readdir(dirPath, { withFileTypes: true });
+  const index = [];
+  for (const f of files) {
+    if (f.isFile() && (f.name.endsWith('.md') || f.name.endsWith('.json'))) {
+      const rel = path.join('memory', f.name);
+      const stat = await fs.promises.stat(path.join(dirPath, f.name));
+      index.push({
+        path: rel,
+        title: path.basename(f.name, path.extname(f.name)),
+        type: 'memory',
+        description: '',
+        lastModified: stat.mtime.toISOString()
+      });
+    }
+  }
+  const index_path = path.join(memory_state.memory_path, 'index.json');
+  await fs.promises.writeFile(index_path, JSON.stringify(index, null, 2));
+  return true;
+}
+
+/**
+ * Сохраняет текущие инструкции в новую версию
+ * Возвращает путь созданной версии
+ */
+function commitInstructionVersion() {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const instructionsPath = path.join(memory_state.memory_path, 'memory', 'instructions.md');
+  if (!fs.existsSync(instructionsPath)) {
+    throw new Error('Файл instructions.md не найден');
+  }
+  const versionsDir = path.join(memory_state.memory_path, 'versions');
+  if (!fs.existsSync(versionsDir)) {
+    fs.mkdirSync(versionsDir, { recursive: true });
+  }
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const versionFile = path.join(versionsDir, `instructions_${stamp}.md`);
+  fs.copyFileSync(instructionsPath, versionFile);
+  return versionFile;
+}
+
+/**
+ * Откатывает файл instructions.md к последней версии
+ * Возвращает путь восстановленного файла
+ */
+function rollbackInstructionVersion() {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const versionsDir = path.join(memory_state.memory_path, 'versions');
+  if (!fs.existsSync(versionsDir)) {
+    throw new Error('Версии отсутствуют');
+  }
+  const files = fs.readdirSync(versionsDir)
+    .filter((f) => f.startsWith('instructions_') && f.endsWith('.md'))
+    .sort();
+  if (!files.length) {
+    throw new Error('Версии отсутствуют');
+  }
+  const latest = files[files.length - 1];
+  const versionFile = path.join(versionsDir, latest);
+  const instructionsPath = path.join(memory_state.memory_path, 'memory', 'instructions.md');
+  fs.copyFileSync(versionFile, instructionsPath);
+  return instructionsPath;
+}
+
+/**
+ * Возвращает список доступных версий инструкций
+ */
+function listInstructionVersions() {
+  if (!memory_state.memory_path) {
+    throw new Error('Память не настроена');
+  }
+  const versionsDir = path.join(memory_state.memory_path, 'versions');
+  if (!fs.existsSync(versionsDir)) {
+    return [];
+  }
+  return fs.readdirSync(versionsDir)
+    .filter((f) => f.startsWith('instructions_') && f.endsWith('.md'))
+    .sort();
+}
+
+/**
  * Возвращает список файлов из index.json
  * Аргументы:
  *     dir (string): относительный путь папки
@@ -240,7 +359,12 @@ module.exports = {
   listMemoryFiles,
   loadMemoryFile,
   saveMemoryWithIndex,
-  listFiles
+  updateIndex,
+  commitInstructionVersion,
+  rollbackInstructionVersion,
+  listInstructionVersions,
+  listFiles,
+  initializeMemory
 };
 
 // Этот модуль хранит и обновляет данные о локальной памяти.
