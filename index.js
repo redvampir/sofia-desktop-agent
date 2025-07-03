@@ -1,7 +1,6 @@
 const fs = require('fs');
 const config = require('./config');
 const memory = require('./memory');
-const memory_mode = require('./memory_mode');
 
 if (config.memoryPath) {
   try {
@@ -14,8 +13,5 @@ if (config.memoryPath) {
   }
 }
 
-if (config.memoryMode) {
-  memory_mode.current_mode = config.memoryMode;
-}
 
 require('./src/api');

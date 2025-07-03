@@ -4,7 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const chat_commands = require('../chat_commands');
 const memory = require('../memory');
-const memory_mode = require('../memory_mode');
 const config = require('../config');
 
 const app = express();
@@ -101,22 +100,6 @@ app.post('/read', async (req, res) => {
   }
 });
 
-/**
- * Устанавливает репозиторий памяти
- * Запрос: POST /setMemoryRepo { type: "github", repo: "repo", token: "token" }
- */
-app.post('/setMemoryRepo', (req, res) => {
-  const { type, repo, token } = req.body;
-  if (!type || !repo || !token) {
-    return res.status(400).send('Missing parameters');
-  }
-  try {
-    memory_mode.switchMemoryRepo(type, repo, token);
-    return res.send('ok');
-  } catch (err) {
-    return res.status(500).send('Unable to set repo');
-  }
-});
 
 /**
  * Сохраняет план урока
@@ -170,12 +153,6 @@ app.post('/saveAnswer', (req, res) => {
   }
 });
 
-/**
- * Возвращает сохранённый токен
- */
-app.post('/getToken', (req, res) => {
-  return res.json({ token: memory_mode.repo_state.token });
-});
 
 /**
  * Устанавливает путь к локальной памяти
@@ -203,36 +180,6 @@ app.post('/set_local_path', (req, res) => {
 /**
  * Переключает режим памяти
  */
-function switchMemoryModeHandler(req, res) {
-  const { type } = req.body;
-  if (!type) {
-    return res.status(400).send('Missing type');
-  }
-  try {
-    config.setMemoryMode(type);
-    memory_mode.current_mode = type;
-    return res.json({ success: true, mode: type });
-  } catch (err) {
-    console.error('switch_memory_mode:', err.message);
-    return res.status(500).json({ error: err.message });
-  }
-}
-
-app.post('/switch_memory_mode', switchMemoryModeHandler);
-app.post('/switch_memory_repo', switchMemoryModeHandler);
-
-/**
- * Сохраняет токен
- * Запрос: POST /setToken { token: "..." }
- */
-app.post('/setToken', (req, res) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).send('Missing token');
-  }
-  memory_mode.repo_state.token = token;
-  return res.send('ok');
-});
 
 /**
  * Загружает файл памяти в контекст
@@ -333,7 +280,7 @@ app.post('/version/list', (req, res) => {
  * Возвращает информацию о профиле
  */
 app.get('/profile', (req, res) => {
-  return res.json({ memory: memory.memory_state, repo: memory_mode.repo_state });
+  return res.json({ memory: memory.memory_state });
 });
 
 /**
@@ -362,12 +309,6 @@ app.get('/plan', (req, res) => {
   }
 });
 
-/**
- * Возвращает статус токена
- */
-app.get('/token/status', (req, res) => {
-  return res.json({ active: memory_mode.repo_state.active });
-});
 
 /**
  * Возвращает список файлов по индексу
@@ -414,8 +355,7 @@ app.get('/ping', async (req, res) => {
       chat_commands.handle_save_local_file(message),
       chat_commands.handle_load_memory(message),
       chat_commands.handle_load_local_file(message),
-      chat_commands.handle_list_local_files(message),
-      chat_commands.handle_switch_memory_mode(message)
+      chat_commands.handle_list_local_files(message)
     ]);
 
     if (handled) {

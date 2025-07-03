@@ -38,7 +38,6 @@ node index.js
 ```
 sofia-desktop-agent/
 ├── index.js              # Главная точка входа
-├── memory_mode.js        # Логика обработки команд
 ├── memory.js             # Работа с файлами памяти
 ├── helpers.js            # Вспомогательные функции (валидация, логгирование)
 ├── config/
@@ -74,7 +73,6 @@ sofia-desktop-agent/
 - Формировать команды в формате:
     - /set_local_path path="..." — указание папки памяти
     - /set_memory_folder name="..." — переключение проекта
-    - /switch_memory_mode mode=local|github — смена источника памяти
     - /load_memory filename="..." — загрузка файла памяти
 
 ## Разработка
