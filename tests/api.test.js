@@ -151,3 +151,33 @@ test('path traversal is blocked', async () => {
   });
   assert.equal(res.status, 500);
 });
+
+test('POST /loadMemoryToContext returns saved content', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mem-'));
+
+  let res = await fetch('http://localhost:4465/set_local_path', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: tmp })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/chat/setup', { method: 'POST' });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/write', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ file: 'context.md', content: 'context data' })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/loadMemoryToContext', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: 'context.md' })
+  });
+  assert.equal(res.status, 200);
+  const json = await res.json();
+  assert.equal(json.content, 'context data');
+});
