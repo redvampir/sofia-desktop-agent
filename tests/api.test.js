@@ -181,3 +181,31 @@ test('POST /loadMemoryToContext returns saved content', async () => {
   const json = await res.json();
   assert.equal(json.content, 'context data');
 });
+
+test('saveMemoryWithIndex creates file and updates index', async () => {
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'mem-'));
+
+  let res = await fetch('http://localhost:4465/set_local_path', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path: tmp })
+  });
+  assert.equal(res.status, 200);
+
+  res = await fetch('http://localhost:4465/saveMemoryWithIndex', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename: 'memory/test.md', content: 'hello', type: 'memory' })
+  });
+  assert.equal(res.status, 200);
+
+  const filePath = path.join(tmp, 'memory', 'test.md');
+  assert.ok(fs.existsSync(filePath));
+
+  const indexPath = path.join(tmp, 'index.json');
+  assert.ok(fs.existsSync(indexPath));
+  const index = JSON.parse(fs.readFileSync(indexPath, 'utf8'));
+  const entry = index.find((e) => e.path === 'memory/test.md');
+  assert.ok(entry);
+  assert.equal(entry.title, 'test');
+});
