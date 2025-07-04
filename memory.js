@@ -2,6 +2,7 @@
 // Модуль для работы с локальной памятью
 const fs = require('fs');
 const path = require('path');
+const config = require('./config');
 
 /**
  * Объект состояния локальной памяти
@@ -84,6 +85,15 @@ function setMemoryPath(folder) {
   memory_state.base_path = resolved;
   memory_state.folder = '';
   memory_state.memory_path = resolved;
+}
+
+// Инициализация пути из конфигурации при локальном режиме
+if (config.memoryMode === 'local' && config.localPath) {
+  try {
+    setMemoryPath(config.localPath);
+  } catch (err) {
+    console.error('Failed to init memory path:', err.message);
+  }
 }
 
 /**
