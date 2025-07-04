@@ -180,7 +180,7 @@ app.post('/set_local_path', (req, res) => {
       fs.mkdirSync(resolved, { recursive: true });
     }
     memory.setMemoryPath(resolved);
-    config.setMemoryPath(resolved);
+    config.setLocalPath(resolved);
     return res.json({ status: 'success', path: resolved });
   } catch (err) {
     console.error('set_local_path:', err.message);
