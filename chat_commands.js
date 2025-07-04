@@ -47,8 +47,9 @@ function handle_save_local_file(message, userId = 'user') {
   }
   try {
     if (memory.memory_state.memory_path) {
-      const savedPath = memory.writeMemoryFile(filename, content);
-      console.log(`✅ Успешно сохранено: ${savedPath}`);
+      memory.saveMemoryWithIndex(path.join('memory', filename), content)
+        .catch((err) => console.error('saveMemoryWithIndex:', err.message));
+      console.log(`✅ Успешно сохранено: ${filename}`);
     } else {
       console.log('❌ Ошибка: путь памяти не задан');
       return false;
@@ -85,7 +86,8 @@ function handle_save_memory(message, userId = 'user') {
   const content = memory.getCurrentPlan();
   try {
     if (memory.memory_state.memory_path) {
-      memory.writeMemoryFile(filename, content);
+      memory.saveMemoryWithIndex(path.join('memory', filename), content)
+        .catch((err) => console.error('saveMemoryWithIndex:', err.message));
       console.log(`✅ Память сохранена как "${filename}"`);
     } else {
       console.log('❌ Ошибка: путь памяти не задан');
