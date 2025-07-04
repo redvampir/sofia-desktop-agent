@@ -27,13 +27,16 @@ app.get('/', (req, res) => {
  * Запрос: GET /read?file=filename.md
  */
 app.get('/read', async (req, res) => {
+  console.log('/read...')
   const filename = req.query.file;
   if (!filename) {
     return res.status(400).send('Missing file parameter');
   }
 
   try {
+    console.log('Try to read...')
     const content = await memory.readMemoryFile(filename);
+    console.log('Content read length:', content.length)
     return res.send(content);
   } catch (err) {
     return res.status(500).send('Unable to read file');
@@ -45,6 +48,7 @@ app.get('/read', async (req, res) => {
  * Запрос: POST /write { file: "name.md", content: "..." }
  */
 app.post('/write', (req, res) => {
+  console.log('/write...')
   const { file, content } = req.body;
   // проверяем наличие параметров
   if (!file || !content) {
@@ -56,6 +60,7 @@ app.post('/write', (req, res) => {
   }
 
   try {
+    console.log('Try to write...')
     memory.writeMemoryFile(file, content);
     return res.send('File saved successfully');
   } catch (err) {
@@ -68,12 +73,18 @@ app.post('/write', (req, res) => {
  * Запрос: POST /save { name: "file.md", content: "..." }
  */
 app.post('/save', (req, res) => {
+  console.log('/save...')
+
   const { name, content } = req.body;
   if (!name || !content) {
     return res.status(400).send('Missing name or content');
   }
   try {
+    console.log('Try to save...')
+
     const saved = chat_commands.handle_save_local_file(`/save_local_file name="${name}" content="${content}"`);
+    console.log('saved:', saved)
+
     if (!saved) {
       return res.status(500).send('Unable to save');
     }
