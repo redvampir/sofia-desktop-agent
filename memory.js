@@ -263,6 +263,7 @@ async function saveMemoryWithIndex(filename, content, type = 'memory') {
   }
 
   await fs.promises.writeFile(index_path, JSON.stringify(index, null, 2));
+  console.log('[local] Saved memory file:', filename);
   return true;
 }
 

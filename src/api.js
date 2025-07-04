@@ -61,7 +61,8 @@ app.post('/write', (req, res) => {
 
   try {
     console.log('Try to write...')
-    memory.writeMemoryFile(file, content);
+    memory.saveMemoryWithIndex(path.join('memory', file), content)
+      .catch((err) => console.error('saveMemoryWithIndex:', err.message));
     return res.send('File saved successfully');
   } catch (err) {
     return res.status(500).send('Unable to save file');
